@@ -4,6 +4,9 @@ from flask_cors import CORS
 from flask_pymongo import PyMongo
 from bson import ObjectId
 from datetime import datetime, timezone
+from dotenv import load_dotenv
+
+load_dotenv()  # Load environment variables from .env file
 
 app = Flask(__name__)
 CORS(app)
@@ -13,8 +16,9 @@ CORS(app)
 #app.config["MONGO_URI"] = "mongodb+srv://admin:admin@budgetapp.l9ol73l.mongodb.net/budgetapp?retryWrites=true&w=majority&appName=budgetapp"
 
 #For production, use the MongoDB Atlas connection below
+mongo_uri = os.environ.get("MONGO_URI")
 print("MONGO_URI from environment:", os.environ.get("MONGO_URI")) # Debugging line to check if MONGO_URI is set
-app.config["MONGO_URI"] = os.environ.get("MONGO_URI")
+
 
 mongo = PyMongo(app)
 transactions = mongo.db.transactions
