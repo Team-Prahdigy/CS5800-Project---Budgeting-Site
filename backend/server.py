@@ -7,8 +7,14 @@ from datetime import datetime, timezone
 app = Flask(__name__)
 CORS(app)
 
+#For local development, use the local MongoDB instance below
 # MongoDB connection
-app.config["MONGO_URI"] = "mongodb+srv://admin:admin@budgetapp.6fhmtk0.mongodb.net/budgetapp?retryWrites=true&w=majority&appName=budgetapp"
+#app.config["MONGO_URI"] = "mongodb+srv://admin:admin@budgetapp.6fhmtk0.mongodb.net/budgetapp?retryWrites=true&w=majority&appName=budgetapp"
+
+#For production, use the MongoDB Atlas connection below
+import os
+app.config["MONGO_URI"] = os.environ.get("MONGO_URI")
+
 mongo = PyMongo(app)
 transactions = mongo.db.transactions
 
