@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 
-const API_URL = "http://127.0.0.1:5000/api/transactions";
+const API_URL = "/api/transactions"; // relative path for production
 
 function App() {
   const [transactions, setTransactions] = useState([]);
@@ -79,14 +79,14 @@ function App() {
         </thead>
         <tbody>
           {transactions.map((t) => (
-            <tr key={t._id}>
+            <tr key={t.id}>
               <td>{t.type}</td>
               <td>{t.category}</td>
               <td>${t.amount.toFixed(2)}</td>
               <td>{t.note}</td>
               <td>{new Date(t.date).toLocaleDateString()}</td>
               <td>
-                <button onClick={() => deleteTransaction(t._id)}>Delete</button>
+                <button onClick={() => deleteTransaction(t.id)}>Delete</button>
               </td>
             </tr>
           ))}
