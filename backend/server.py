@@ -17,10 +17,10 @@ CORS(app)
 
 #For production, use the MongoDB Atlas connection below
 mongo_uri = os.environ.get("MONGO_URI")
-print("MONGO_URI from environment:", os.environ.get("MONGO_URI")) # Debugging line to check if MONGO_URI is set
+print("MONGO_URI from environment:", mongo_uri) # Debugging line to check if MONGO_URI is set
+app.config["MONGO_URI"] = mongo_uri
+mongo = PyMongo(app, uri=mongo_uri)
 
-
-mongo = PyMongo(app)
 transactions = mongo.db.transactions
 
 # Helper to convert ObjectId
