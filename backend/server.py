@@ -1,29 +1,25 @@
 import os
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from flask_pymongo import PyMongo
 from bson import ObjectId
 from datetime import datetime, timezone
 from dotenv import load_dotenv
 
-load_dotenv()  # Load environment variables from .env file
+load_dotenv()
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder="../frontend/build", static_url_path="/")
 CORS(app)
 
-#For local development, use the local MongoDB instance below
-# MongoDB connection
-#app.config["MONGO_URI"] = "mongodb+srv://admin:admin@budgetapp.l9ol73l.mongodb.net/budgetapp?retryWrites=true&w=majority&appName=budgetapp"
-
-#For production, use the MongoDB Atlas connection below
 mongo_uri = os.environ.get("MONGO_URI")
-print("MONGO_URI from environment:", mongo_uri) # Debugging line to check if MONGO_URI is set
+print("MONGO_URI from environment:", mongo_uri)
 app.config["MONGO_URI"] = mongo_uri
 mongo = PyMongo(app, uri=mongo_uri)
 
 transactions = mongo.db.transactions
 
-# Helper to convert ObjectId
+# ------------------ API ROUTES ------------------
+
 def serialize(transaction):
     return {
         "id": str(transaction["_id"]),
@@ -34,13 +30,11 @@ def serialize(transaction):
         "note": transaction.get("note", "")
     }
 
-# GET all transactions
 @app.route("/api/transactions", methods=["GET"])
 def get_transactions():
     all_txns = transactions.find()
     return jsonify([serialize(t) for t in all_txns])
 
-# POST a new transaction
 @app.route("/api/transactions", methods=["POST"])
 def add_transaction():
     data = request.json
@@ -51,7 +45,7 @@ def add_transaction():
         return jsonify({"error": f"Missing required fields: {', '.join(missing_fields)}"}), 400
 
     txn = {
-        "type": data["type"],  # "income" or "expense"
+        "type": data["type"],
         "category": data["category"],
         "amount": float(data["amount"]),
         "date": data.get("date", datetime.utcnow().isoformat()),
@@ -59,11 +53,8 @@ def add_transaction():
     }
     result = transactions.insert_one(txn)
     inserted_txn = transactions.find_one({"_id": result.inserted_id})
-
-    # Return full serialized response with "id" field
     return jsonify(serialize(inserted_txn)), 201
 
-# DELETE a transaction
 @app.route("/api/transactions/<id>", methods=["DELETE"])
 def delete_transaction(id):
     result = transactions.delete_one({"_id": ObjectId(id)})
@@ -71,7 +62,6 @@ def delete_transaction(id):
         return jsonify({"msg": "Deleted"}), 200
     return jsonify({"msg": "Not found"}), 404
 
-# PUT (update) a transaction
 @app.route("/api/transactions/<id>", methods=["PUT"])
 def update_transaction(id):
     data = request.json
@@ -88,6 +78,15 @@ def update_transaction(id):
     if result.matched_count:
         return jsonify({"msg": "Updated"}), 200
     return jsonify({"msg": "Not found"}), 404
+
+# ------------------ SERVE REACT FRONTEND ------------------
+@app.route("/", defaults={"path": ""})
+@app.route("/<path:path>")
+def serve(path):
+    if path != "" and os.path.exists(os.path.join(app.static_folder, path)):
+        return send_from_directory(app.static_folder, path)
+    else:
+        return send_from_directory(app.static_folder, "index.html")
 
 if __name__ == "__main__":
     app.run(debug=True)
