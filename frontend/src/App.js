@@ -1,7 +1,11 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 
-const API_URL = "/api/transactions"; // relative path for production
+const API_URL =
+  process.env.NODE_ENV === "production"
+    ? "/api/transactions" // In Render or production
+    : "http://127.0.0.1:5000/api/transactions"; // Local development
+
 
 function App() {
   const [transactions, setTransactions] = useState([]);
