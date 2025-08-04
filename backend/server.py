@@ -1,3 +1,4 @@
+import os
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_pymongo import PyMongo
@@ -9,10 +10,10 @@ CORS(app)
 
 #For local development, use the local MongoDB instance below
 # MongoDB connection
-#app.config["MONGO_URI"] = "mongodb+srv://admin:admin@budgetapp.l9ol73l.mongodb.net/?retryWrites=true&w=majority&appName=budgetapp"
+#app.config["MONGO_URI"] = "mongodb+srv://admin:admin@budgetapp.l9ol73l.mongodb.net/budgetapp?retryWrites=true&w=majority&appName=budgetapp"
 
 #For production, use the MongoDB Atlas connection below
-import os
+print("MONGO_URI from environment:", os.environ.get("MONGO_URI")) # Debugging line to check if MONGO_URI is set
 app.config["MONGO_URI"] = os.environ.get("MONGO_URI")
 
 mongo = PyMongo(app)
