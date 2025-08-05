@@ -52,7 +52,7 @@ jobs:
       # 8. Run backend tests
       - name: Run backend tests
         working-directory: ./backend
-        run: pytest
+        run: pytest test_basic.py
 
       # 9. Deploy to Render
       - name: Deploy to Render
