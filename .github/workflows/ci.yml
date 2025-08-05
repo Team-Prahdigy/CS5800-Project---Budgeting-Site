@@ -52,6 +52,8 @@ jobs:
 
       # Step 7: Trigger Render Deployment
       # You need to set RENDER_DEPLOY_HOOK as a GitHub secret
-      - name: Deploy to Render
-        run: |
-          curl -X POST "$RENDER_DEPLOY_HOOK"
+      - name: Trigger Render Deployment
+        run: curl -X POST $RENDER_DEPLOY_HOOK
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+
