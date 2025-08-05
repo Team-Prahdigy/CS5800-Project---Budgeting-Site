@@ -20,33 +20,40 @@ jobs:
         with:
           node-version: 18
 
-      # 3. Install and build frontend
-      - name: Install and build frontend
+      # 3. Install frontend dependencies
+      - name: Install frontend dependencies
         working-directory: ./frontend
-        run: |
-          npm install
-          npm run build
+        run: npm install
 
-      # 4. Set up Python for backend
+      # 4. Run frontend tests (optional - remove if no frontend tests)
+      - name: Run frontend tests
+        working-directory: ./frontend
+        run: npm test -- --watchAll=false
+
+      # 5. Build frontend
+      - name: Build frontend
+        working-directory: ./frontend
+        run: npm run build
+
+      # 6. Set up Python for backend
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: 3.10
 
-      # 5. Install backend dependencies
+      # 7. Install backend dependencies
       - name: Install backend dependencies
         working-directory: ./backend
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      # 6. Run backend tests (adjust test command if needed)
+      # 8. Run backend tests
       - name: Run backend tests
         working-directory: ./backend
-        run: |
-          pytest || echo "No tests found, skipping..."
+        run: pytest
 
-      # 7. Deploy to Render using Deploy Hook (fixed)
+      # 9. Deploy to Render using Deploy Hook (fixed)
       - name: Deploy to Render
         if: success()
         run: curl -X POST $RENDER_DEPLOY_HOOK
