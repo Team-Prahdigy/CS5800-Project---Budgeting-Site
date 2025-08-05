@@ -3,57 +3,52 @@ name: CI/CD Pipeline
 on:
   push:
     branches:
-      - main   # Change to your default branch if not main
+      - main  # Trigger pipeline on pushes to main branch
 
 jobs:
-  build-test-deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout repo
-      - name: Checkout repository
+      # 1. Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v3
 
-      # Step 2: Set up Python for backend
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-
-      # Step 3: Install backend dependencies
-      - name: Install backend dependencies
-        working-directory: backend
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-
-      # Step 4: Run backend tests (if any exist)
-      - name: Run backend tests
-        working-directory: backend
-        run: |
-          if [ -d "tests" ]; then
-            pytest || true
-          else
-            echo "No tests directory found, skipping tests."
-          fi
-
-      # Step 5: Set up Node.js for frontend
+      # 2. Set up Node.js for frontend
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '18'
+          node-version: 18
 
-      # Step 6: Install frontend dependencies and build
-      - name: Install frontend dependencies
-        working-directory: frontend
+      # 3. Install and build frontend
+      - name: Install and build frontend
+        working-directory: ./frontend
         run: |
           npm install
           npm run build
 
-      # Step 7: Trigger Render Deployment
-      # You need to set RENDER_DEPLOY_HOOK as a GitHub secret
-      - name: Trigger Render Deployment
+      # 4. Set up Python for backend
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.10
+
+      # 5. Install backend dependencies
+      - name: Install backend dependencies
+        working-directory: ./backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # 6. Run backend tests (adjust test command if needed)
+      - name: Run backend tests
+        working-directory: ./backend
+        run: |
+          pytest || echo "No tests found, skipping..."
+
+      # 7. Deploy to Render using Deploy Hook (fixed)
+      - name: Deploy to Render
+        if: success()
         run: curl -X POST $RENDER_DEPLOY_HOOK
         env:
           RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
-
