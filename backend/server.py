@@ -5,8 +5,6 @@ from flask_pymongo import PyMongo
 from bson import ObjectId
 from datetime import datetime
 from dotenv import load_dotenv
-from werkzeug.security import generate_password_hash, check_password_hash
-from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 
 # Load environment variables
 load_dotenv()
@@ -20,11 +18,6 @@ print("MONGO_URI from environment:", mongo_uri)  # Debugging line
 app.config["MONGO_URI"] = mongo_uri
 mongo = PyMongo(app, uri=mongo_uri)
 
-# JWT Configuration
-app.config["JWT_SECRET_KEY"] = os.environ.get("JWT_SECRET_KEY", "fallback-secret")
-jwt = JWTManager(app)
-
-users = mongo.db.users
 transactions = mongo.db.transactions
 
 # ---- Serve React Frontend ----
@@ -48,49 +41,15 @@ def serialize(transaction):
         "note": transaction.get("note", "")
     }
 
-# ---- AUTH ROUTES ----
-@app.route("/api/register", methods=["POST"])
-def register():
-    data = request.json
-    username = data.get("username")
-    password = data.get("password")
+# ---- API ROUTES ----
 
-    if not username or not password:
-        return jsonify({"error": "Username and password are required"}), 400
-
-    if users.find_one({"username": username}):
-        return jsonify({"error": "Username already exists"}), 400
-
-    hashed_pw = generate_password_hash(password)
-    users.insert_one({"username": username, "password": hashed_pw})
-
-    return jsonify({"msg": "User registered successfully"}), 201
-
-@app.route("/api/login", methods=["POST"])
-def login():
-    data = request.json
-    username = data.get("username")
-    password = data.get("password")
-
-    user = users.find_one({"username": username})
-    if not user or not check_password_hash(user["password"], password):
-        return jsonify({"error": "Invalid username or password"}), 401
-
-    token = create_access_token(identity=str(user["_id"]))
-    return jsonify({"token": token}), 200
-
-# ---- TRANSACTION ROUTES (Protected) ----
 @app.route("/api/transactions", methods=["GET"])
-@jwt_required()
 def get_transactions():
-    user_id = get_jwt_identity()
-    all_txns = transactions.find({"user_id": user_id})
+    all_txns = transactions.find()
     return jsonify([serialize(t) for t in all_txns])
 
 @app.route("/api/transactions", methods=["POST"])
-@jwt_required()
 def add_transaction():
-    user_id = get_jwt_identity()
     data = request.json
     required_fields = ["type", "category", "amount"]
 
@@ -99,7 +58,6 @@ def add_transaction():
         return jsonify({"error": f"Missing required fields: {', '.join(missing_fields)}"}), 400
 
     txn = {
-        "user_id": user_id,
         "type": data["type"],
         "category": data["category"],
         "amount": float(data["amount"]),
@@ -111,21 +69,17 @@ def add_transaction():
     return jsonify(serialize(inserted_txn)), 201
 
 @app.route("/api/transactions/<id>", methods=["DELETE"])
-@jwt_required()
 def delete_transaction(id):
-    user_id = get_jwt_identity()
-    result = transactions.delete_one({"_id": ObjectId(id), "user_id": user_id})
+    result = transactions.delete_one({"_id": ObjectId(id)})
     if result.deleted_count == 1:
         return jsonify({"msg": "Deleted"}), 200
     return jsonify({"msg": "Not found"}), 404
 
 @app.route("/api/transactions/<id>", methods=["PUT"])
-@jwt_required()
 def update_transaction(id):
-    user_id = get_jwt_identity()
     data = request.json
     result = transactions.update_one(
-        {"_id": ObjectId(id), "user_id": user_id},
+        {"_id": ObjectId(id)},
         {"$set": {
             "type": data["type"],
             "category": data["category"],
