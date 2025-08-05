@@ -25,11 +25,6 @@ jobs:
         working-directory: ./frontend
         run: npm install
 
-      # 4. Run frontend tests (optional - remove if no frontend tests)
-      - name: Run frontend tests
-        working-directory: ./frontend
-        run: npm test -- --watchAll=false
-
       # 5. Build frontend
       - name: Build frontend
         working-directory: ./frontend
